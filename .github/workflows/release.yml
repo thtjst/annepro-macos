@@ -1,0 +1,32 @@
+name: Release
+
+# Push a tag like v1.0.1 to build, test and publish a release with the app and CLI zips.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Test
+        run: scripts/test.sh
+      - name: Build
+        run: VERSION="${GITHUB_REF_NAME#v}" scripts/build-app.sh
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          NOTES=$(awk "/^## $VERSION/{flag=1; next} /^## /{flag=0} flag" CHANGELOG.md)
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/*.zip --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/*.zip --title "Anne Pro for Mac $VERSION" --notes "$NOTES"
+          fi

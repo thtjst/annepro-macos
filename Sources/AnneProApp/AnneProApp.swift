@@ -60,6 +60,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        #if DEBUG
+        if let directory = ScreenshotMaker.directory {
+            Task { @MainActor in await ScreenshotMaker.run(into: directory) }
+            return
+        }
+        #endif
         let firstLaunch = !UserDefaults.standard.bool(forKey: Self.launchedBeforeKey)
         UserDefaults.standard.set(true, forKey: Self.launchedBeforeKey)
         if firstLaunch || !MenuBarVisibility.shared.isShown {

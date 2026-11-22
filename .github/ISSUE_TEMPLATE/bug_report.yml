@@ -1,0 +1,45 @@
+name: Bug report
+description: Something doesn't work with your Anne Pro
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! This app supports the **original Anne Pro** (micro-USB) only, not the Anne Pro 2.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version and Mac
+      placeholder: macOS 15.2, MacBook Air M2
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: App version
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: bluetooth
+    attributes:
+      label: How does the keyboard show up in System Settings → Bluetooth?
+      options:
+        - ANNE_KB_L0_… (BLE mode)
+        - Something else (please say in the description)
+        - It doesn't show up
+    validations:
+      required: true
+  - type: textarea
+    id: log
+    attributes:
+      label: Output of `anne status -v`
+      description: Optional, but it helps a lot. Download `anne` from the release page and run it in Terminal.
+      render: text

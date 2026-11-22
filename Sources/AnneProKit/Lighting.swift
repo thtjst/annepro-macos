@@ -54,6 +54,16 @@ public struct RGB: Hashable, Sendable, Codable {
 
     public var exceedsPowerBudget: Bool { asStoredByKeyboard != self }
 
+    /// This colour scaled down just enough to stay within the power budget, keeping its hue.
+    /// Looks smoother than letting the keyboard cut it to 60%.
+    public var fittingPowerBudget: RGB {
+        let sum = Int(r) + Int(g) + Int(b)
+        guard sum > Self.powerBudget else { return self }
+        let scale = Double(Self.powerBudget) / Double(sum)
+        func fit(_ c: UInt8) -> UInt8 { UInt8((Double(c) * scale).rounded(.down)) }
+        return RGB(fit(r), fit(g), fit(b))
+    }
+
     public func mixed(with other: RGB, amount t: Double) -> RGB {
         func mix(_ a: UInt8, _ b: UInt8) -> UInt8 { UInt8((Double(a) + (Double(b) - Double(a)) * t).rounded()) }
         return RGB(mix(r, other.r), mix(g, other.g), mix(b, other.b))
@@ -176,14 +186,14 @@ extension LightingProfile {
     /// Hue sweeps left to right.
     public static func horizontalRainbow() -> LightingProfile {
         LightingProfile(colors: AnnePro.keys.map { key in
-            RGB(hue: (key.x + key.width / 2) / AnnePro.width * 0.85)
+            RGB(hue: (key.x + key.width / 2) / AnnePro.width * 0.85).fittingPowerBudget
         })
     }
 
     /// One hue per row.
     public static func verticalRainbow() -> LightingProfile {
         LightingProfile(colors: AnnePro.keys.map { key in
-            RGB(hue: Double(key.row) / Double(AnnePro.rows))
+            RGB(hue: Double(key.row) / Double(AnnePro.rows)).fittingPowerBudget
         })
     }
 
@@ -191,7 +201,7 @@ extension LightingProfile {
     public static func gradient(from start: RGB, to end: RGB) -> LightingProfile {
         let span = AnnePro.width + Double(AnnePro.rows)
         return LightingProfile(colors: AnnePro.keys.map { key in
-            start.mixed(with: end, amount: (key.x + key.width / 2 + Double(key.row)) / span)
+            start.mixed(with: end, amount: (key.x + key.width / 2 + Double(key.row)) / span).fittingPowerBudget
         })
     }
 

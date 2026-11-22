@@ -145,6 +145,14 @@ public final class AnneProDevice: NSObject, ObservableObject {
         }
     }
 
+    #if DEBUG
+    /// Pretends a keyboard is connected, for screenshots.
+    public func simulateConnection(name: String, battery: Int) {
+        state = .connected(name: name)
+        batteryLevel = battery
+    }
+    #endif
+
     /// Starts Bluetooth and begins looking for the keyboard. Safe to call more than once.
     public func start() {
         guard central == nil else { return }

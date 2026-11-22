@@ -10,7 +10,7 @@ import UniformTypeIdentifiers
 /// App state shared by the menu bar panel and the editor windows.
 @MainActor
 final class AppModel: ObservableObject {
-    static let shared = AppModel(startBluetooth: !CommandLine.arguments.contains("--render-previews"))
+    static let shared = AppModel(startBluetooth: !CommandLine.arguments.contains("--render-previews") && !CommandLine.arguments.contains("--screenshots"))
 
     /// SwiftUI's `openWindow`, captured from a live view so AppKit code can open scenes.
     var openWindowAction: OpenWindowAction?
@@ -312,6 +312,19 @@ final class AppModel: ObservableObject {
             objectWillChange.send()
         }
     }
+
+    #if DEBUG
+    /// Sample state for screenshots.
+    func prepareForScreenshots() {
+        lighting = .horizontalRainbow()
+        layout = .windowsArrows
+        brush = RGB(0, 160, 255)
+        brightness = 8
+        lightingMode = .custom
+        layoutMode = .windowsArrows
+        device.simulateConnection(name: "ANNE_KB_L0_XXXX", battery: 87)
+    }
+    #endif
 
     // MARK: Helpers
 

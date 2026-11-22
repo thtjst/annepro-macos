@@ -9,6 +9,21 @@
   from a modern, native macOS menu bar app.
 </p>
 
+<p align="center">
+  <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/thtjst/annepro-macos?label=download" alt="Latest release"></a>
+  <a href="../../actions/workflows/ci.yml"><img src="https://github.com/thtjst/annepro-macos/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <img src="https://img.shields.io/badge/macOS-13%2B-blue" alt="macOS 13+">
+  <img src="https://img.shields.io/badge/Apple%20Silicon%20%2B%20Intel-universal-blue" alt="Universal">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/thtjst/annepro-macos" alt="MIT License"></a>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/lighting-dark.png">
+    <img src="docs/screenshots/lighting-light.png" alt="Per-key lighting editor" width="780">
+  </picture>
+</p>
+
 ---
 
 The official Anne Pro apps are long gone. This is a from-scratch rewrite for current macOS (Apple Silicon and Intel), built on the protocol work of earlier community projects and tested against a real keyboard.
@@ -22,6 +37,27 @@ The official Anne Pro apps are long gone. This is a from-scratch rewrite for cur
 - **Battery level**, automatic reconnect when the keyboard wakes, Open at Login, and an option to hide the menu bar icon.
 - **Import / export** profiles as JSON. It also reads files exported by the old AnnePro-mac app.
 - **`anne` command-line tool** for scripting and debugging.
+
+## Screenshots
+
+<table>
+  <tr>
+    <td valign="top" width="300">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/menu-dark.png">
+        <img src="docs/screenshots/menu-light.png" alt="Menu bar panel" width="300">
+      </picture>
+      <br><sub>Everything one click away in the menu bar</sub>
+    </td>
+    <td valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/layout-dark.png">
+        <img src="docs/screenshots/layout-light.png" alt="Custom layout editor">
+      </picture>
+      <br><sub>Remap keys on the base and Fn layers</sub>
+    </td>
+  </tr>
+</table>
 
 ## Requirements
 
@@ -80,7 +116,10 @@ Only the Xcode Command Line Tools are needed (`xcode-select --install`); full Xc
 swift build                  # everything
 scripts/test.sh              # unit tests
 scripts/build-app.sh         # universal, signed dist/AnnePro.app + zips
+scripts/screenshots.sh       # regenerate the README screenshots
 ```
+
+Contributions are welcome. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 The project is a Swift package:
 

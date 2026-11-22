@@ -151,4 +151,15 @@ import Testing
         #expect(RGB(0, 255, 227).asStoredByKeyboard == RGB(0, 0x99, 0x88))
         #expect(RGB.white.asStoredByKeyboard == RGB(153, 153, 153))
     }
+
+    @Test func presetsStayWithinBudget() {
+        let presets: [LightingProfile] = [
+            .horizontalRainbow(), .verticalRainbow(),
+            .gradient(from: RGB(255, 255, 0), to: RGB(0, 255, 255)),
+        ]
+        for preset in presets {
+            #expect(preset.colors.allSatisfy { !$0.exceedsPowerBudget })
+        }
+        #expect(RGB(255, 255, 0).fittingPowerBudget == RGB(225, 225, 0))
+    }
 }

@@ -39,4 +39,49 @@ enum PreviewRenderer {
         print("Rendered \(name).png")
     }
 }
+
+/// `AnnePro --screenshots <dir>` opens the real windows with sample data, saves each one
+/// as PNG in light and dark mode, and quits. Debug builds only; used for the README.
+@MainActor
+enum ScreenshotMaker {
+    static var directory: URL? {
+        let arguments = CommandLine.arguments
+        guard let index = arguments.firstIndex(of: "--screenshots"), index + 1 < arguments.count else { return nil }
+        return URL(fileURLWithPath: arguments[index + 1])
+    }
+
+    static func run(into directory: URL) async {
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let model = AppModel.shared
+        model.prepareForScreenshots()
+        while model.openWindowAction == nil { try? await Task.sleep(for: .milliseconds(100)) }
+        for (suffix, appearance) in [("light", NSAppearance.Name.aqua), ("dark", .darkAqua)] {
+            NSApp.appearance = NSAppearance(named: appearance)
+            for id in ["main", "lighting", "layout"] { model.openWindowAction?(id: id) }
+            try? await Task.sleep(for: .seconds(2))
+            for window in NSApp.windows where window.isVisible {
+                let name: String
+                switch window.title {
+                case "Anne Pro": name = "menu"
+                case "Lighting": name = "lighting"
+                case "Custom Layout": name = "layout"
+                default: continue
+                }
+                // The menu panel without its title bar; editors with their toolbar.
+                guard let view = name == "menu" ? window.contentView : window.contentView?.superview,
+                      let rep = NSBitmapImageRep(
+                          bitmapDataPlanes: nil, pixelsWide: Int(view.bounds.width * 2), pixelsHigh: Int(view.bounds.height * 2),
+                          bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                          colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0
+                      ) else { continue }
+                rep.size = view.bounds.size // Retina-resolution capture
+                view.cacheDisplay(in: view.bounds, to: rep)
+                let url = directory.appendingPathComponent("\(name)-\(suffix).png")
+                try? rep.representation(using: .png, properties: [:])?.write(to: url)
+                print("Saved \(url.lastPathComponent)")
+            }
+        }
+        exit(0)
+    }
+}
 #endif

@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Protocol documentation
+    url: https://github.com/thtjst/annepro-macos/blob/main/docs/PROTOCOL.md
+    about: How the keyboard talks over Bluetooth, for anyone building their own tools.
