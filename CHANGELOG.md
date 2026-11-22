@@ -1,8 +1,9 @@
 # Changelog
 
-## Unreleased
+## 1.0.1
 
 - Rainbow and gradient presets now stay within the keyboard's LED power budget, so they look even on the keyboard instead of having some keys cut to 60%.
+- Fixed reconnecting after Bluetooth is turned off and on, or the Mac wakes from sleep.
 
 ## 1.0.0
 

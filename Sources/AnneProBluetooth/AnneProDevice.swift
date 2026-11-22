@@ -449,6 +449,10 @@ public final class AnneProDevice: NSObject, ObservableObject {
             beginSearching()
         case .poweredOff:
             resetConnection(error: .notConnected)
+            // No disconnect callback arrives when Bluetooth turns off; forget the old link
+            // so it can't block reconnecting once Bluetooth is back.
+            peripheral = nil
+            searchTask?.cancel()
             state = .poweredOff
         case .unauthorized:
             state = .unauthorized
