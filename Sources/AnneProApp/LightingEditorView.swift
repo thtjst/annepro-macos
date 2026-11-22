@@ -22,6 +22,15 @@ struct LightingEditorView: View {
                             color: model.lighting[key].asStoredByKeyboard,
                             isHighlighted: hoveredKey.value == key.id
                         )
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(key.label.isEmpty ? "Space" : key.label)
+                        .accessibilityValue(model.lighting[key].hex)
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityHint("Paints this key with the brush colour")
+                        .accessibilityAction {
+                            model.checkpointLighting()
+                            model.paint(key)
+                        }
                     }
                     .contentShape(Rectangle())
                     .gesture(paintGesture(in: geometry.size))
@@ -51,6 +60,28 @@ struct LightingEditorView: View {
         .frame(minWidth: 760, minHeight: 470)
         .toolbar {
             ToolbarItemGroup {
+                Menu {
+                    Button("Save Current Design…") {
+                        if let name = promptForDesignName(suggested: "My design \(model.savedDesigns.count + 1)") {
+                            model.saveCurrentDesign(named: name)
+                        }
+                    }
+                    if !model.savedDesigns.isEmpty {
+                        Divider()
+                        ForEach(model.savedDesigns) { design in
+                            Button(design.name) { model.loadDesign(design) }
+                        }
+                        Divider()
+                        Menu("Delete") {
+                            ForEach(model.savedDesigns) { design in
+                                Button(design.name) { model.deleteDesign(design) }
+                            }
+                        }
+                    }
+                } label: {
+                    Label("Designs", systemImage: "square.stack")
+                }
+                .help("Save this design, or load one you saved")
                 Button { model.undoLighting() } label: { Label("Undo", systemImage: "arrow.uturn.backward") }
                     .keyboardShortcut("z")
                     .disabled(!model.canUndoLighting)

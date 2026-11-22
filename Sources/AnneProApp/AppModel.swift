@@ -47,6 +47,10 @@ final class AppModel: ObservableObject {
         didSet { UserDefaults.standard.set(brightness, forKey: Keys.brightness) }
     }
 
+    @Published private(set) var savedDesigns: [SavedDesign] {
+        didSet { save({ try JSONEncoder().encode(self.savedDesigns) }, key: Keys.savedDesigns) }
+    }
+
     @Published private(set) var lightingMode: LightingMode?
     @Published private(set) var layoutMode: LayoutMode?
     @Published private(set) var busy: String?
@@ -58,6 +62,7 @@ final class AppModel: ObservableObject {
     private var layoutHistory: [KeyLayout] = []
     private var cancellables: Set<AnyCancellable> = []
     private var lastStatusRefresh = Date.distantPast
+    private let batteryAlerts = BatteryAlerts()
     private let logger = Logger(subsystem: "io.github.thtjst.AnnePro", category: "keyboard")
 
     private enum Keys {
@@ -65,6 +70,7 @@ final class AppModel: ObservableObject {
         static let layout = "layout"
         static let brush = "brush"
         static let brightness = "brightness"
+        static let savedDesigns = "savedDesigns"
     }
 
 
@@ -74,6 +80,7 @@ final class AppModel: ObservableObject {
         layout = defaults.data(forKey: Keys.layout).flatMap { try? KeyLayout(jsonData: $0) } ?? .mac
         brush = defaults.data(forKey: Keys.brush).flatMap { try? JSONDecoder().decode(RGB.self, from: $0) } ?? RGB(0, 160, 255)
         brightness = defaults.object(forKey: Keys.brightness) as? Double ?? 10
+        savedDesigns = defaults.data(forKey: Keys.savedDesigns).flatMap { try? JSONDecoder().decode([SavedDesign].self, from: $0) } ?? []
 
         let logger = self.logger
         device.logHandler = { logger.debug("\($0, privacy: .public)") }
@@ -95,7 +102,20 @@ final class AppModel: ObservableObject {
             }
             .store(in: &cancellables)
 
-        if startBluetooth { device.start() }
+        device.$batteryLevel
+            .removeDuplicates()
+            .sink { [weak self] level in
+                guard let self else { return }
+                self.batteryAlerts.levelChanged(level, keyboard: self.device.deviceName)
+            }
+            .store(in: &cancellables)
+
+        if startBluetooth {
+            device.start()
+            let device = self.device
+            batteryAlerts.start { device.refreshBattery() }
+            UpdateChecker.shared.start()
+        }
     }
 
     var isConnected: Bool { device.state.isConnected }
@@ -227,6 +247,36 @@ final class AppModel: ObservableObject {
         }
     }
 
+    // MARK: Saved designs
+
+    func saveCurrentDesign(named name: String) {
+        let design = SavedDesign(name: name, profile: lighting)
+        if let index = savedDesigns.firstIndex(where: { $0.name.caseInsensitiveCompare(name) == .orderedSame }) {
+            savedDesigns[index] = SavedDesign(name: savedDesigns[index].name, profile: lighting)
+        } else {
+            savedDesigns.append(design)
+            savedDesigns.sort { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+        }
+        say("Saved “\(name)”.")
+    }
+
+    func loadDesign(_ design: SavedDesign) {
+        guard let profile = design.profile else { return }
+        applyPreset(profile)
+    }
+
+    /// Loads a design and sends it to the keyboard in one go (used from the menu bar).
+    func applyDesign(_ design: SavedDesign) {
+        guard let profile = design.profile else { return }
+        checkpointLighting()
+        lighting = profile
+        sendLighting()
+    }
+
+    func deleteDesign(_ design: SavedDesign) {
+        savedDesigns.removeAll { $0.id == design.id }
+    }
+
     // MARK: Layout editor
 
     func assign(_ code: UInt8, to key: PhysicalKey, on layer: KeyLayout.Layer) {
@@ -323,6 +373,11 @@ final class AppModel: ObservableObject {
         lightingMode = .custom
         layoutMode = .windowsArrows
         device.simulateConnection(name: "ANNE_KB_L0_XXXX", battery: 87)
+        savedDesigns = [
+            SavedDesign(name: "Ocean", profile: .gradient(from: RGB(0, 255, 160), to: RGB(0, 40, 255))),
+            SavedDesign(name: "Rainbow", profile: .horizontalRainbow()),
+            SavedDesign(name: "Sunset", profile: .gradient(from: RGB(255, 40, 0), to: RGB(120, 0, 255))),
+        ]
     }
     #endif
 

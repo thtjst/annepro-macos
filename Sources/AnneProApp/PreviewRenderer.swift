@@ -68,14 +68,33 @@ enum ScreenshotMaker {
                 default: continue
                 }
                 // The menu panel without its title bar; editors with their toolbar.
-                guard let view = name == "menu" ? window.contentView : window.contentView?.superview,
-                      let rep = NSBitmapImageRep(
-                          bitmapDataPlanes: nil, pixelsWide: Int(view.bounds.width * 2), pixelsHigh: Int(view.bounds.height * 2),
-                          bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
-                          colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0
-                      ) else { continue }
-                rep.size = view.bounds.size // Retina-resolution capture
-                view.cacheDisplay(in: view.bounds, to: rep)
+                guard let view = name == "menu" ? window.contentView : window.contentView?.superview else { continue }
+                // The menu panel without the (empty) title bar strip; editors with their toolbar.
+                var rect = view.bounds
+                if name == "menu" {
+                    let layout = window.contentLayoutRect // window coordinates, origin bottom-left
+                    rect = NSRect(
+                        x: layout.minX, y: view.isFlipped ? view.bounds.height - layout.maxY : layout.minY,
+                        width: layout.width, height: layout.height
+                    )
+                }
+                guard let rep = NSBitmapImageRep(
+                    bitmapDataPlanes: nil, pixelsWide: Int(rect.width * 2), pixelsHigh: Int(rect.height * 2),
+                    bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                    colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0
+                ) else { continue }
+                rep.size = rect.size // Retina-resolution capture
+                if name == "menu" {
+                    // Without its window frame the panel has no background; paint one first.
+                    NSGraphicsContext.saveGraphicsState()
+                    NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+                    NSAppearance(named: appearance)?.performAsCurrentDrawingAppearance {
+                        NSColor.windowBackgroundColor.setFill()
+                        NSRect(origin: .zero, size: rect.size).fill()
+                    }
+                    NSGraphicsContext.restoreGraphicsState()
+                }
+                view.cacheDisplay(in: rect, to: rep)
                 let url = directory.appendingPathComponent("\(name)-\(suffix).png")
                 try? rep.representation(using: .png, properties: [:])?.write(to: url)
                 print("Saved \(url.lastPathComponent)")

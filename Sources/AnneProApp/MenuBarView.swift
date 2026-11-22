@@ -5,6 +5,7 @@ import SwiftUI
 struct MenuBarView: View {
     @EnvironmentObject private var model: AppModel
     @ObservedObject private var menuBar = MenuBarVisibility.shared
+    @ObservedObject private var updates = UpdateChecker.shared
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
@@ -12,6 +13,20 @@ struct MenuBarView: View {
             header
                 .padding(.horizontal, 14)
                 .padding(.vertical, 12)
+            if let update = updates.available {
+                Divider()
+                HStack {
+                    Image(systemName: "arrow.down.circle.fill").foregroundStyle(Color.accentColor)
+                    Text("Version \(update.version) is available")
+                        .font(.callout)
+                    Spacer()
+                    Button("Download") { NSWorkspace.shared.open(update.page) }
+                        .controlSize(.small)
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Color.accentColor.opacity(0.08))
+            }
             Divider()
             VStack(alignment: .leading, spacing: 16) {
                 lightingSection
@@ -105,6 +120,18 @@ struct MenuBarView: View {
                 Button("Edit Colours…") { open("lighting") }
                     .controlSize(.small)
             }
+            if !model.savedDesigns.isEmpty {
+                Menu {
+                    ForEach(model.savedDesigns) { design in
+                        Button(design.name) { model.applyDesign(design) }
+                    }
+                } label: {
+                    Label("Apply a Saved Design", systemImage: "square.stack")
+                }
+                .controlSize(.small)
+                .fixedSize()
+                .help("Send one of your saved designs to the keyboard")
+            }
             HStack(spacing: 8) {
                 Image(systemName: "sun.min").foregroundStyle(.secondary)
                 Slider(value: $model.brightness, in: 1...10, step: 1) { editing in
@@ -151,11 +178,10 @@ struct MenuBarView: View {
             .toggleStyle(.checkbox)
             .controlSize(.small)
             HStack {
-                if !menuBar.isShown {
-                    Text("Your keyboard keeps its settings after you quit.")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
+                Toggle("Check for Updates", isOn: $updates.isEnabled)
+                    .toggleStyle(.checkbox)
+                    .controlSize(.small)
+                    .help("Once a day, ask GitHub whether a newer version exists. Nothing about you is sent.")
                 Spacer()
                 Button("About") { showAbout() }
                     .buttonStyle(.borderless)

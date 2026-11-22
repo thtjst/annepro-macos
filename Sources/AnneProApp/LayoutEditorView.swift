@@ -33,6 +33,11 @@ struct LayoutEditorView: View {
                     )
                     .contentShape(Rectangle())
                     .onTapGesture { if !locked { editing = key } }
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(key.label.isEmpty ? "Space" : key.label)
+                    .accessibilityValue(locked ? "\(KeyCode.named(code).name), locked" : KeyCode.named(code).name)
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAction { if !locked { editing = key } }
                     .popover(isPresented: Binding(
                         get: { editing?.id == key.id },
                         set: { if !$0 { editing = nil } }

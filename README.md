@@ -26,7 +26,7 @@
 
 ---
 
-The official Anne Pro apps are long gone. This is a from-scratch rewrite for current macOS (Apple Silicon and Intel), built on the protocol work of earlier community projects and tested against a real keyboard.
+The official Obins Anne Pro app is long gone, and the old community Mac app ([AnnePro-mac](https://github.com/msvisser/AnnePro-mac)) no longer runs on current macOS. This is a from-scratch rewrite: **Anne Pro software for macOS** that changes the RGB backlight and key layout of the original Anne Pro over Bluetooth, on Apple Silicon (M1, M2, M3, M4…) and Intel Macs. It's built on the protocol work of earlier community projects and tested against a real keyboard.
 
 ## Features
 
@@ -34,7 +34,9 @@ The official Anne Pro apps are long gone. This is a from-scratch rewrite for cur
 - **Per-key lighting editor**: paint keys by clicking or dragging, fill groups, use presets, ⌥-click to pick up a colour. The preview shows what the keyboard will really display.
 - **Custom layout editor**: remap any key on the base and Fn layers. It won't let you upload a layout that would lock you out (no Fn or Anne key).
 - **Reliable uploads**: every upload is read back from the keyboard and retried until it sticks.
-- **Battery level**, automatic reconnect when the keyboard wakes, Open at Login, and an option to hide the menu bar icon.
+- **Saved designs**: keep several lighting designs and switch between them from the menu bar.
+- **Battery level** and a notification when it runs low, automatic reconnect when the keyboard wakes, Open at Login, and an option to hide the menu bar icon.
+- **Update check**: shows when a new version is out (can be turned off).
 - **Import / export** profiles as JSON. It also reads files exported by the old AnnePro-mac app.
 - **`anne` command-line tool** for scripting and debugging.
 
@@ -107,6 +109,29 @@ Run `anne help` for everything. The first time you use it, macOS asks to give yo
 | "Bluetooth access not allowed" | System Settings → Privacy & Security → Bluetooth → enable Anne Pro (or your terminal for `anne`). |
 | Colours look dimmer than picked | The keyboard dims any key whose R+G+B exceeds 450 to 60% to protect its LEDs. The editor preview shows this. |
 | Switching to Custom layout is refused | The keyboard's custom slot is empty or broken. Open the layout editor, start from a preset and send it first. |
+
+## FAQ
+
+**Is there still an app for the Anne Pro?**
+The official Obins app for the original Anne Pro was discontinued. This app replaces it on the Mac and covers what it did: lighting modes, brightness, per-key colours and custom layouts.
+
+**Does it work with the Anne Pro 2?**
+No. The Anne Pro 2 (USB-C, 2018 and later) uses a different protocol and is configured with Obinskit or QMK. This app is for the original Anne Pro with micro-USB.
+
+**Does it need a USB cable?**
+No, everything happens over Bluetooth. The original Anne Pro can't be configured over USB.
+
+**How do I tell which Anne Pro I have?**
+The original has a micro-USB port and shows up in Bluetooth settings as `ANNE_KB_…`. The Anne Pro 2 has USB-C.
+
+**Do my settings stay on the keyboard?**
+Yes. Lighting and layouts are saved on the keyboard itself, so they keep working on other computers and when the app isn't running.
+
+**Is there a Windows or Linux version?**
+Not from this project. [anne-keyboard-windows](https://github.com/kprinssu/anne-keyboard-windows) exists for Windows, and [docs/PROTOCOL.md](docs/PROTOCOL.md) documents everything needed to build one.
+
+**Does the app phone home?**
+Only to check GitHub for a newer version once a day, which you can turn off in the menu (uncheck *Check for Updates*). Nothing about you or your keyboard is sent.
 
 ## Building from source
 

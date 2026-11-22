@@ -99,6 +99,7 @@ public final class AnneProDevice: NSObject, ObservableObject {
     private var peripheral: CBPeripheral?
     private var writeCharacteristic: CBCharacteristic?
     private var notifyCharacteristic: CBCharacteristic?
+    private var batteryCharacteristic: CBCharacteristic?
     private var writeType: CBCharacteristicWriteType = .withResponse
 
     private var assembler = MessageAssembler()
@@ -166,6 +167,12 @@ public final class AnneProDevice: NSObject, ObservableObject {
         if let peripheral { central?.cancelPeripheralConnection(peripheral) }
         resetConnection(error: .notConnected)
         peripheral = nil
+    }
+
+    /// Asks for a fresh battery reading (the keyboard doesn't always push updates).
+    public func refreshBattery() {
+        guard let peripheral, peripheral.state == .connected, let batteryCharacteristic else { return }
+        peripheral.readValue(for: batteryCharacteristic)
     }
 
     public func waitUntilConnected(timeout: Duration) async throws {
@@ -515,6 +522,7 @@ public final class AnneProDevice: NSObject, ObservableObject {
     private func resetConnection(error: AnneProError) {
         writeCharacteristic = nil
         notifyCharacteristic = nil
+        batteryCharacteristic = nil
         assembler = MessageAssembler()
         inbox.removeAll()
         info = nil
@@ -565,6 +573,7 @@ public final class AnneProDevice: NSObject, ObservableObject {
                 notifyCharacteristic = characteristic
                 peripheral.setNotifyValue(true, for: characteristic)
             case AnneProUUID.batteryLevel:
+                batteryCharacteristic = characteristic
                 peripheral.readValue(for: characteristic)
                 if characteristic.properties.contains(.notify) {
                     peripheral.setNotifyValue(true, for: characteristic)

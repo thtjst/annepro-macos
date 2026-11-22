@@ -163,3 +163,14 @@ import Testing
         #expect(RGB(255, 255, 0).fittingPowerBudget == RGB(225, 225, 0))
     }
 }
+
+@Suite struct VersionTests {
+    @Test func comparesVersions() {
+        #expect(VersionNumber.isNewer("v1.1.0", than: "1.0.1"))
+        #expect(VersionNumber.isNewer("1.0.10", than: "1.0.9"))
+        #expect(VersionNumber.isNewer("2.0", than: "1.9.9"))
+        #expect(!VersionNumber.isNewer("1.0.1", than: "1.0.1"))
+        #expect(!VersionNumber.isNewer("v1.0.0", than: "1.0.1"))
+        #expect(!VersionNumber.isNewer("1.0", than: "1.0.0"))
+    }
+}
