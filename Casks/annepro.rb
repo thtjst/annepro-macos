@@ -3,8 +3,8 @@
 #   brew tap thtjst/annepro-macos https://github.com/thtjst/annepro-macos
 #   brew install --cask annepro
 cask "annepro" do
-  version "1.1.0"
-  sha256 "0000000000000000000000000000000000000000000000000000000000000000"
+  version "1.2.0"
+  sha256 "292aa90dd375e181bbf0b2be543c054eebee495d3ee9edcb53a1ddcb34b8aed7"
 
   url "https://github.com/thtjst/annepro-macos/releases/download/v#{version}/AnnePro-#{version}.zip"
   name "Anne Pro for Mac"
