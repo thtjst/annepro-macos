@@ -133,6 +133,64 @@ public struct KeyLayout: Hashable, Sendable {
         }
     }
 
+    // MARK: Quick changes
+
+    /// Common one-click remaps, applied to the base layer.
+    public enum QuickChange: String, CaseIterable, Identifiable, Sendable {
+        case capsLockToEscape = "Caps Lock → Escape"
+        case capsLockToControl = "Caps Lock → Control"
+        case swapLeftAltAndWin = "Swap left Alt and Win"
+        case swapRightAltAndCtrl = "Swap right Alt and Ctrl"
+
+        public var id: Self { self }
+
+        public var detail: String {
+            switch self {
+            case .capsLockToEscape: "Popular with Vim users. Escape stays on its own key too."
+            case .capsLockToControl: "An easier-to-reach Control key."
+            case .swapLeftAltAndWin: "Puts Command next to the space bar, like a Mac keyboard."
+            case .swapRightAltAndCtrl: "Swaps the two right-hand modifier keys."
+            }
+        }
+    }
+
+    private static func physicalKey(row: Int, label: String, last: Bool = false) -> PhysicalKey {
+        let matches = AnnePro.keys.filter { $0.row == row && $0.label == label }
+        return last ? matches.last! : matches.first!
+    }
+
+    public mutating func apply(_ change: QuickChange) {
+        switch change {
+        case .capsLockToEscape:
+            assign(41, to: Self.physicalKey(row: 2, label: "Caps"), on: .base)
+        case .capsLockToControl:
+            assign(224, to: Self.physicalKey(row: 2, label: "Caps"), on: .base)
+        case .swapLeftAltAndWin:
+            swap(Self.physicalKey(row: 4, label: "Alt"), Self.physicalKey(row: 4, label: "Win"))
+        case .swapRightAltAndCtrl:
+            swap(Self.physicalKey(row: 4, label: "Alt", last: true), Self.physicalKey(row: 4, label: "Ctrl", last: true))
+        }
+    }
+
+    /// Swaps what two keys send on the base layer, moving Fn/Anne correctly if either is one.
+    private mutating func swap(_ a: PhysicalKey, _ b: PhysicalKey) {
+        let codeA = base[a.slot], codeB = base[b.slot]
+        let special: Set<UInt8> = [KeyCode.fn, KeyCode.anne]
+        if special.contains(codeA) || special.contains(codeB) {
+            // Assigning a special code clears it elsewhere, so place the special one last.
+            if special.contains(codeA) {
+                assign(codeB, to: a, on: .base)
+                assign(codeA, to: b, on: .base)
+            } else {
+                assign(codeA, to: b, on: .base)
+                assign(codeB, to: a, on: .base)
+            }
+        } else {
+            base[a.slot] = codeB
+            base[b.slot] = codeA
+        }
+    }
+
     // MARK: Files
 
     private struct File: Codable {

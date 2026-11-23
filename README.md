@@ -31,8 +31,8 @@ The official Obins Anne Pro app is long gone, and the old community Mac app ([An
 ## Features
 
 - **Menu bar controls**: switch lighting modes (solid colours, breathing, rainbow, reactive, ripple…), brightness, and layout (Windows, Windows + arrows, Mac, Custom) in one click.
-- **Per-key lighting editor**: paint keys by clicking or dragging, fill groups, use presets, ⌥-click to pick up a colour. The preview shows what the keyboard will really display.
-- **Custom layout editor**: remap any key on the base and Fn layers. It won't let you upload a layout that would lock you out (no Fn or Anne key).
+- **Per-key lighting editor**: paint keys by clicking or dragging, fill groups, use presets, ⌥-click to pick up a colour, or drop any image on the keyboard to colour it from the picture. The preview shows what the keyboard will really display.
+- **Custom layout editor**: remap any key on the base and Fn layers, or use one-click changes like Caps Lock → Escape. It won't let you upload a layout that would lock you out (no Fn or Anne key).
 - **Reliable uploads**: every upload is read back from the keyboard and retried until it sticks.
 - **Saved designs**: keep several lighting designs and switch between them from the menu bar.
 - **Battery level** and a notification when it runs low, automatic reconnect when the keyboard wakes, Open at Login, and an option to hide the menu bar icon.
@@ -68,6 +68,17 @@ The official Obins Anne Pro app is long gone, and the old community Mac app ([An
 - The keyboard paired with your Mac over Bluetooth in **BLE mode**. It shows up as `ANNE_KB_L0_…` in Bluetooth settings (`L0` means BLE).
 
 ## Install
+
+### With Homebrew
+
+```sh
+brew tap thtjst/annepro-macos https://github.com/thtjst/annepro-macos
+brew install --cask annepro
+```
+
+This installs the app and the `anne` command-line tool, skips the Gatekeeper warning, and `brew upgrade` keeps it up to date.
+
+### Manually
 
 1. Download `AnnePro-x.y.z.zip` from [Releases](../../releases/latest), unzip it, and move **AnnePro.app** to Applications.
 2. Open it. The app isn't notarized by Apple (it's a free hobby project), so macOS blocks it the first time:

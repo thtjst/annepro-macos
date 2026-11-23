@@ -20,7 +20,7 @@ USAGE: anne <command> [arguments] [-v]
   read-layout [file.json]     Download the custom layout (print or save)
   write-layout <file.json|windows|arrows|mac>
                               Upload a custom layout (or a factory preset) and switch to it
-  raw <hex bytes…>            Send bytes as-is and print replies for 3 seconds
+  raw <hex bytes…> [/ …]      Send packets as-is (separate several with /) and print replies
 
   -v, --verbose               Print every packet
   --attempts <n>              Upload attempts before giving up (default 3)
@@ -220,18 +220,25 @@ func run() async throws {
         say(describe(result))
 
     case "raw":
-        let bytes = try rest.map { text -> UInt8 in
-            let digits = text.hasPrefix("0x") ? String(text.dropFirst(2)) : text
-            guard let byte = UInt8(digits, radix: 16) else { throw UsageError("Not a hex byte: \(text)") }
-            return byte
+        // Packets are separated by "/": anne raw 09 01 08 / 07 01 04
+        let packets = try rest.split(separator: "/").map { group in
+            try group.map { text -> UInt8 in
+                let digits = text.hasPrefix("0x") ? String(text.dropFirst(2)) : text
+                guard let byte = UInt8(digits, radix: 16) else { throw UsageError("Not a hex byte: \(text)") }
+                return byte
+            }
         }
-        guard !bytes.isEmpty, bytes.count <= Framing.packetSize else {
-            throw UsageError("Usage: anne raw <1–20 hex bytes>, e.g. `anne raw 09 01 08`")
+        guard !packets.isEmpty, packets.allSatisfy({ !$0.isEmpty && $0.count <= Framing.packetSize }) else {
+            throw UsageError("Usage: anne raw <1–20 hex bytes> [/ more packets…], e.g. `anne raw 09 01 08`")
         }
         let device = try await connect()
         device.unsolicitedHandler = { say("← \($0)") }
-        try await device.perform(.raw(bytes))
-        say("→ \(bytes.hexString)")
+        _ = try? await device.refreshInfo() // make sure the keyboard is awake
+        for packet in packets {
+            try await device.perform(.raw(packet))
+            say("→ \(packet.hexString)")
+            try await Task.sleep(for: .milliseconds(400))
+        }
         try await Task.sleep(for: .seconds(3))
 
     default:

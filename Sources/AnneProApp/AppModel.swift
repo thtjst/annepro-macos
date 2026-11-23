@@ -55,11 +55,9 @@ final class AppModel: ObservableObject {
     @Published private(set) var layoutMode: LayoutMode?
     @Published private(set) var busy: String?
     @Published private(set) var notice: Notice?
-    @Published private(set) var canUndoLighting = false
-    @Published private(set) var canUndoLayout = false
+    @Published private(set) var lightingEdits = EditHistory<LightingProfile>()
+    @Published private(set) var layoutEdits = EditHistory<KeyLayout>()
 
-    private var lightingHistory: [LightingProfile] = []
-    private var layoutHistory: [KeyLayout] = []
     private var cancellables: Set<AnyCancellable> = []
     private var lastStatusRefresh = Date.distantPast
     private let batteryAlerts = BatteryAlerts()
@@ -177,15 +175,33 @@ final class AppModel: ObservableObject {
 
     /// Call before a change to make it undoable (once per stroke, not per key).
     func checkpointLighting() {
-        lightingHistory.append(lighting)
-        if lightingHistory.count > 50 { lightingHistory.removeFirst() }
-        canUndoLighting = true
+        lightingEdits.record(lighting)
     }
 
     func undoLighting() {
-        guard let previous = lightingHistory.popLast() else { return }
-        lighting = previous
-        canUndoLighting = !lightingHistory.isEmpty
+        if let previous = lightingEdits.undo(from: lighting) { lighting = previous }
+    }
+
+    func redoLighting() {
+        if let next = lightingEdits.redo(from: lighting) { lighting = next }
+    }
+
+    /// Colours the keys from a picture (file chosen in a panel, or dropped on the keyboard).
+    func applyImage(at url: URL) {
+        guard let sampler = ImageSampler(contentsOf: url) else {
+            say("Couldn't read \(url.lastPathComponent) as an image.", isError: true)
+            return
+        }
+        applyPreset(.sampled(averageColor: sampler.averageColor))
+        say("Coloured the keys from \(url.lastPathComponent). Send it to the keyboard when you like it.")
+    }
+
+    func chooseImageForLighting() {
+        let panel = NSOpenPanel()
+        panel.title = "Colour Keys from an Image"
+        panel.allowedContentTypes = [.image]
+        NSApp.activate(ignoringOtherApps: true)
+        if panel.runModal() == .OK, let url = panel.url { applyImage(at: url) }
     }
 
     func paint(_ key: PhysicalKey) {
@@ -280,21 +296,27 @@ final class AppModel: ObservableObject {
     // MARK: Layout editor
 
     func assign(_ code: UInt8, to key: PhysicalKey, on layer: KeyLayout.Layer) {
-        layoutHistory.append(layout)
-        canUndoLayout = true
+        layoutEdits.record(layout)
         layout.assign(code, to: key, on: layer)
     }
 
     func applyLayoutPreset(_ preset: KeyLayout) {
-        layoutHistory.append(layout)
-        canUndoLayout = true
+        layoutEdits.record(layout)
         layout = preset
     }
 
+    func applyQuickChange(_ change: KeyLayout.QuickChange) {
+        layoutEdits.record(layout)
+        layout.apply(change)
+        say("\(change.rawValue). Send the layout to the keyboard to use it.")
+    }
+
     func undoLayout() {
-        guard let previous = layoutHistory.popLast() else { return }
-        layout = previous
-        canUndoLayout = !layoutHistory.isEmpty
+        if let previous = layoutEdits.undo(from: layout) { layout = previous }
+    }
+
+    func redoLayout() {
+        if let next = layoutEdits.redo(from: layout) { layout = next }
     }
 
     func sendLayout() {
@@ -317,8 +339,7 @@ final class AppModel: ObservableObject {
     func readLayout() {
         perform("Reading layout…") {
             let stored = try await self.device.readLayout()
-            self.layoutHistory.append(self.layout)
-            self.canUndoLayout = true
+            self.layoutEdits.record(self.layout)
             self.layout = stored
             if stored.issues.isEmpty {
                 self.say("Loaded the layout stored on the keyboard.")

@@ -56,6 +56,13 @@ struct LayoutEditorView: View {
                 ForEach(KeyLayout.presets, id: \.name) { preset in
                     Button(preset.name) { model.applyLayoutPreset(preset.layout) }
                 }
+                Menu("Quick Changes") {
+                    ForEach(KeyLayout.QuickChange.allCases) { change in
+                        Button(change.rawValue) { model.applyQuickChange(change) }
+                            .help(change.detail)
+                    }
+                }
+                .fixedSize()
                 Spacer()
                 HStack(spacing: 5) {
                     Circle().fill(Color.orange).frame(width: 6, height: 6)
@@ -88,7 +95,10 @@ struct LayoutEditorView: View {
             ToolbarItemGroup {
                 Button { model.undoLayout() } label: { Label("Undo", systemImage: "arrow.uturn.backward") }
                     .keyboardShortcut("z")
-                    .disabled(!model.canUndoLayout)
+                    .disabled(!model.layoutEdits.canUndo)
+                Button { model.redoLayout() } label: { Label("Redo", systemImage: "arrow.uturn.forward") }
+                    .keyboardShortcut("z", modifiers: [.command, .shift])
+                    .disabled(!model.layoutEdits.canRedo)
                 Button { model.importLayout() } label: { Label("Import…", systemImage: "square.and.arrow.down") }
                 Button { model.exportLayout() } label: { Label("Export…", systemImage: "square.and.arrow.up") }
                 Button { model.readLayout() } label: { Label("Read from Keyboard", systemImage: "arrow.down.circle") }

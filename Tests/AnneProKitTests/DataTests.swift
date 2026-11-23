@@ -174,3 +174,63 @@ import Testing
         #expect(!VersionNumber.isNewer("1.0", than: "1.0.0"))
     }
 }
+
+@Suite struct ImageSamplingTests {
+    @Test func samplesRegionsLeftToRight() {
+        // A picture that's red on the left half and blue on the right half.
+        let profile = LightingProfile.sampled(vivid: false) { x, _, width, _ in
+            x + width / 2 < 0.5 ? RGB(200, 0, 0) : RGB(0, 0, 200)
+        }
+        let esc = AnnePro.keys.first { $0.label == "Esc" }!
+        let backspace = AnnePro.keys.first { $0.label == "Backspace" }!
+        #expect(profile[esc] == RGB(200, 0, 0))
+        #expect(profile[backspace] == RGB(0, 0, 200))
+    }
+
+    @Test func regionsTileTheWholePicture() {
+        var covered = 0.0
+        _ = LightingProfile.sampled { _, _, width, height in
+            covered += width * height
+            return .black
+        }
+        #expect(abs(covered - 1) < 0.000001)
+    }
+
+    @Test func vividKeepsDarkOffAndBrightensTheRest() {
+        #expect(RGB(10, 10, 10).vivid == .black)
+        let dullRed = RGB(120, 40, 40).vivid
+        #expect(dullRed.r > 200 && dullRed.g < dullRed.r / 2)
+        #expect(RGB(255, 0, 0).hsb.hue == 0)
+    }
+}
+
+@Suite struct QuickChangeTests {
+    func key(_ row: Int, _ label: String, last: Bool = false) -> PhysicalKey {
+        let matches = AnnePro.keys.filter { $0.row == row && $0.label == label }
+        return last ? matches.last! : matches.first!
+    }
+
+    @Test func capsLockToEscape() {
+        var layout = KeyLayout.windows
+        layout.apply(.capsLockToEscape)
+        #expect(layout[.base, key(2, "Caps")] == 41)
+        #expect(layout[.base, key(0, "Esc")] == 41)
+        #expect(layout.issues.isEmpty)
+    }
+
+    @Test func swapLeftAltAndWinMatchesMacPreset() {
+        var layout = KeyLayout.windows
+        layout.apply(.swapLeftAltAndWin)
+        #expect(layout[.base, key(4, "Win")] == KeyLayout.mac[.base, key(4, "Win")])
+        #expect(layout[.base, key(4, "Alt")] == KeyLayout.mac[.base, key(4, "Alt")])
+    }
+
+    @Test func swappingWithFnKeepsLayoutValid() {
+        var layout = KeyLayout.windowsArrows // right Ctrl is Fn here
+        layout.apply(.swapRightAltAndCtrl)
+        #expect(layout.issues.isEmpty)
+        #expect(layout[.base, key(4, "Alt", last: true)] == KeyCode.fn)
+        #expect(layout[.fn, key(4, "Alt", last: true)] == KeyCode.fn)
+        #expect(layout[.base, key(4, "Ctrl", last: true)] == 80) // the Left arrow that was on right Alt
+    }
+}

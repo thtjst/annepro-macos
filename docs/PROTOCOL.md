@@ -86,6 +86,15 @@ Both payloads start with a 4-byte header `[0, 0, crcHigh, crcLow]`. The CRC is *
 
 A keyboard that has never had a custom layout returns all zeros for it **[hw]**. Switching to the Custom layout then would disable every key, so the app checks the stored layout before switching.
 
+## Not reachable over Bluetooth
+
+The anne-key firmware source documents two more LED controller commands. On stock firmware the key controller doesn't pass them through from Bluetooth: no acknowledgement ever comes back, while regular mode changes on the same path are acknowledged **[hw]**.
+
+- **SetIndividualKeys** (`09 … 0B CA <count> [<slot> <R> <G> <B> <mode>]…`): lights individual keys without saving them. It would allow a live preview while editing. Tested as a single packet, in chunked form, and with mode 1 (on) and 2 (flash).
+- **ConfigCmd** (`09 04 05 <theme> <speed> <brightness>`): "next theme/speed/brightness". Its reply would carry the current brightness and animation speed. Tested with `00 00 00` and `00 01 00`.
+
+So there's no way to read brightness or set animation speed from an app.
+
 ## Quirks found on hardware
 
 These explain the "uploads sometimes stop halfway" problem in earlier apps.

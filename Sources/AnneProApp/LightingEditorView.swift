@@ -5,6 +5,7 @@ struct LightingEditorView: View {
     @EnvironmentObject private var model: AppModel
     @StateObject private var stroking = LocalState(false)
     @StateObject private var hoveredKey = LocalState<PhysicalKey.ID?>(nil)
+    @StateObject private var dropTargeted = LocalState(false)
 
     private static let palette: [RGB] = [
         RGB(255, 0, 0), RGB(255, 100, 0), RGB(255, 200, 0), RGB(120, 255, 0), RGB(0, 255, 60),
@@ -44,11 +45,27 @@ struct LightingEditorView: View {
                 }
                 .aspectRatio(AnnePro.width / Double(AnnePro.rows), contentMode: .fit)
             }
+            .overlay {
+                if dropTargeted.value {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .strokeBorder(Color.accentColor, style: StrokeStyle(lineWidth: 3, dash: [8, 6]))
+                        .background(RoundedRectangle(cornerRadius: 14).fill(Color.accentColor.opacity(0.15)))
+                        .overlay(Label("Drop an image to colour the keys", systemImage: "photo").font(.title3.weight(.semibold)))
+                }
+            }
+            .onDrop(of: [.fileURL], isTargeted: $dropTargeted.value) { providers in
+                guard let provider = providers.first else { return false }
+                _ = provider.loadObject(ofClass: URL.self) { url, _ in
+                    guard let url else { return }
+                    Task { @MainActor in model.applyImage(at: url) }
+                }
+                return true
+            }
 
             brushRow
             fillRow
 
-            Text("Click or drag across keys to paint. Hold ⌥ and click to pick up a key's colour. The keyboard dims very bright colours (like white) to protect its LEDs; the preview shows what it will display.")
+            Text("Click or drag across keys to paint. Hold ⌥ and click to pick up a key's colour. Drop an image on the keyboard to colour it from the picture. The keyboard dims very bright colours (like white) to protect its LEDs; the preview shows what it will display.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -84,7 +101,10 @@ struct LightingEditorView: View {
                 .help("Save this design, or load one you saved")
                 Button { model.undoLighting() } label: { Label("Undo", systemImage: "arrow.uturn.backward") }
                     .keyboardShortcut("z")
-                    .disabled(!model.canUndoLighting)
+                    .disabled(!model.lightingEdits.canUndo)
+                Button { model.redoLighting() } label: { Label("Redo", systemImage: "arrow.uturn.forward") }
+                    .keyboardShortcut("z", modifiers: [.command, .shift])
+                    .disabled(!model.lightingEdits.canRedo)
                 Button { model.importLighting() } label: { Label("Import…", systemImage: "square.and.arrow.down") }
                 Button { model.exportLighting() } label: { Label("Export…", systemImage: "square.and.arrow.up") }
                 Button { model.readLighting() } label: { Label("Read from Keyboard", systemImage: "arrow.down.circle") }
@@ -142,6 +162,8 @@ struct LightingEditorView: View {
                 Button("Sunset") { model.applyPreset(.gradient(from: RGB(255, 40, 0), to: RGB(120, 0, 255))) }
                 Button("Ocean") { model.applyPreset(.gradient(from: RGB(0, 255, 160), to: RGB(0, 40, 255))) }
                 Button("Brush colour with white modifiers") { model.applyPreset(.accent(base: model.brush, accent: RGB(150, 150, 150))) }
+                Divider()
+                Button("From an Image…") { model.chooseImageForLighting() }
                 Divider()
                 Button("All off") { model.applyPreset(LightingProfile(repeating: .black)) }
             }

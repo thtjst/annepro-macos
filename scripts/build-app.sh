@@ -34,11 +34,15 @@ sed -e "s/__VERSION__/$VERSION/" -e "s/__BUILD__/$BUILD_NUMBER/" -e "s/__BUNDLE_
     Resources/AnnePro-Info.plist > "$APP/Contents/Info.plist"
 printf 'APPL????' > "$APP/Contents/PkgInfo"
 cp "$BIN/anne" "$DIST/anne"
+# Also inside the app, so the Homebrew cask can put `anne` on the PATH.
+mkdir -p "$APP/Contents/Helpers"
+cp "$BIN/anne" "$APP/Contents/Helpers/anne"
 
 echo "▸ Signing ($([[ "$SIGN_IDENTITY" == "-" ]] && echo ad-hoc || echo "$SIGN_IDENTITY"))"
 TIMESTAMP=(--timestamp=none)
 [[ "$SIGN_IDENTITY" != "-" ]] && TIMESTAMP=(--timestamp)
 codesign --force --options runtime "${TIMESTAMP[@]}" --sign "$SIGN_IDENTITY" "$DIST/anne"
+codesign --force --options runtime "${TIMESTAMP[@]}" --sign "$SIGN_IDENTITY" "$APP/Contents/Helpers/anne"
 codesign --force --options runtime "${TIMESTAMP[@]}" --sign "$SIGN_IDENTITY" \
     --entitlements Resources/AnnePro.entitlements "$APP"
 codesign --verify --strict "$APP"

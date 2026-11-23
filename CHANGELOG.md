@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0
+
+- Colour the keys from any image: drop it on the keyboard in the lighting editor, or use Presets → From an Image.
+- Quick layout changes: Caps Lock → Escape, Caps Lock → Control, swap left Alt and Win, swap right Alt and Ctrl.
+- Redo (⇧⌘Z) in both editors.
+- Install with Homebrew: `brew tap thtjst/annepro-macos https://github.com/thtjst/annepro-macos && brew install --cask annepro`. The `anne` tool now ships inside the app.
+- The update check now really runs at most once a day and remembers what it found, and only ever opens github.com pages.
+
 ## 1.1.0
 
 - Saved lighting designs: save designs in the lighting editor and apply them from the menu bar.

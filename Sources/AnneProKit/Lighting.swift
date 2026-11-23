@@ -64,6 +64,31 @@ public struct RGB: Hashable, Sendable, Codable {
         return RGB(fit(r), fit(g), fit(b))
     }
 
+    /// Hue, saturation and brightness in 0...1.
+    public var hsb: (hue: Double, saturation: Double, brightness: Double) {
+        let r = Double(self.r) / 255, g = Double(self.g) / 255, b = Double(self.b) / 255
+        let maximum = max(r, g, b), minimum = min(r, g, b), delta = maximum - minimum
+        var hue = 0.0
+        if delta > 0 {
+            switch maximum {
+            case r: hue = ((g - b) / delta).truncatingRemainder(dividingBy: 6)
+            case g: hue = (b - r) / delta + 2
+            default: hue = (r - g) / delta + 4
+            }
+            hue /= 6
+            if hue < 0 { hue += 1 }
+        }
+        return (hue, maximum == 0 ? 0 : delta / maximum, maximum)
+    }
+
+    /// A punchier version for LEDs: colours averaged from a photo come out dull and dark.
+    /// Near-black stays off; everything else gets brighter and a little more saturated.
+    public var vivid: RGB {
+        let (hue, saturation, brightness) = hsb
+        guard brightness >= 0.1 else { return .black }
+        return RGB(hue: hue, saturation: min(1, saturation * 1.25), brightness: 0.6 + 0.4 * brightness)
+    }
+
     public func mixed(with other: RGB, amount t: Double) -> RGB {
         func mix(_ a: UInt8, _ b: UInt8) -> UInt8 { UInt8((Double(a) + (Double(b) - Double(a)) * t).rounded()) }
         return RGB(mix(r, other.r), mix(g, other.g), mix(b, other.b))
@@ -202,6 +227,21 @@ extension LightingProfile {
         let span = AnnePro.width + Double(AnnePro.rows)
         return LightingProfile(colors: AnnePro.keys.map { key in
             start.mixed(with: end, amount: (key.x + key.width / 2 + Double(key.row)) / span).fittingPowerBudget
+        })
+    }
+
+    /// Colours taken from a picture laid over the keyboard. `averageColor` returns the mean
+    /// colour of a region given as fractions of the picture (0...1, origin top-left).
+    public static func sampled(
+        vivid: Bool = true,
+        averageColor: (_ x: Double, _ y: Double, _ width: Double, _ height: Double) -> RGB
+    ) -> LightingProfile {
+        LightingProfile(colors: AnnePro.keys.map { key in
+            let color = averageColor(
+                key.x / AnnePro.width, Double(key.row) / Double(AnnePro.rows),
+                key.width / AnnePro.width, 1 / Double(AnnePro.rows)
+            )
+            return (vivid ? color.vivid : color).fittingPowerBudget
         })
     }
 
